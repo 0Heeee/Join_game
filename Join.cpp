@@ -26,6 +26,8 @@
 #define PALACE_3 13
 #define GRAVE 14
 
+#define newCAT 15
+
 #define left 0
 #define up 1
 #define right 2
@@ -73,7 +75,7 @@ Item clickItem;
 int plate;
 int probArray[100];
 char s[MAX_CAT];
-SqStack tmpCat;
+SqStack tmpCatS, catS, newCatS;
 
 MOUSEMSG m;
 
@@ -85,15 +87,14 @@ void nextItem();
 void showClick();
 void join();
 void catMove();
+void uniteSame();
 void putItem(int x, int y, Type type);
-void toJoin();
-void toCat();
 void toPlate();
 void stepDown();
 void probability();
-void move(Position catPos);
 bool checkPosDirec(Position pos, int direc);
 void toPos(Position pos_1, Position pos_2);
+void delCat(SqStack S, Position pos);
 
 int main()
 {	
@@ -247,7 +248,6 @@ void map(){
 	user.score = 0;
 	user.step = INIT_STEP;
 	user.money = 0;
-	//在地图上标注数据 
 	putimage(18, 27, &scoreBlack);
 	putimage(18, 68, &scoreBlack);
 	putimage(288, 27, &scoreBlack);
@@ -333,11 +333,10 @@ void join(){
 		//若放置位置为空 
 		if(clickItem.type == EMPTY){
 			putItem(clickItem.pos.x, clickItem.pos.y, item.type);//放下物品 
-			toCat();//...将猫变为墓碑
-			toJoin();//...合体 
+			catMove();//移动猫
+			uniteSame();//合并相同物品 
 			stepDown();//步数减1 
-			nextItem();//生成下一个物品
-			catMove();//猫咪移动   
+			nextItem();//生成下一个物品  
 		}
 		//若放置位置为盘子
 		else if(clickItem.type == PLATE){
@@ -352,7 +351,7 @@ void join(){
 		}
 	}
 	//若下一物品为猫 
-	else if(item.type == CAT){
+	/*else if(item.type == CAT){
 		//若放置位置为空 
 		if(clickItem.type == EMPTY){
 			//...放置猫 (判断放下后是否被困住)
@@ -422,7 +421,118 @@ void join(){
 	}
 	else{
 		//...item类型错误 
+	}*/
+}
+
+void catMove(){
+	int graveFlag, tmpFlag;
+	Position tmpPos, changePos;
+	//遍历地图 
+	for(int i = 0; i < MAP_LENGTH; i++){
+		for(int j = 0; j < MAP_LENGTH; j++){
+			//若发现猫 
+			if(gameMap[i][j].type == CAT){
+				//检测猫的周围是否被全包围 
+				graveFlag = 1;
+				tmpFlag = 0;
+				for(int k = 0; k < 4; k++){
+					if(checkPosDirec(gameMap[i][j].pos, k)){
+						if(gameMap[gameMap[i][j].pos.x + (k - 1) % 2][gameMap[i][j].pos.y + (k - 2) % 2].type == EMPTY){
+				   			graveFlag = 0;
+				   			//记录为空时的方向 
+				   			toPos(changePos, gameMap[gameMap[i][j].pos.x + (k - 1) % 2][gameMap[i][j].pos.y + (k - 2) % 2].pos);
+						}
+						else if(gameMap[gameMap[i][j].pos.x + (k - 1) % 2][gameMap[i][j].pos.y + (k - 2) % 2].type == CAT
+						|| gameMap[gameMap[i][j].pos.x + (k - 1) % 2][gameMap[i][j].pos.y + (k - 2) % 2].type == newCAT){
+							tmpFlag = 1;
+						}
+					}
+				}
+				//若全包围
+				if(graveFlag == 1 && tmpFlag == 0){
+					//将猫变为墓碑
+					putItem(i, j, GRAVE);
+				}
+				/*//若四周除了猫咪以外，其他方向均包围
+				else if(graveFlag == 1 && tmpFlag == 1){
+					//加入暂存栈
+					Push(tmpCatS, gameMap[i][j].pos);
+				}
+				//若猫可移动 
+				else{
+					//记录可移动猫  
+					Push(catS, gameMap[i][j].pos);
+					//移动 
+					putItem(changePos.x, changePos.y, CAT);
+					putItem(gameMap[i][j].pos.x, gameMap[i][j].pos.y, EMPTY);
+					//标注被移动到的位置 
+					gameMap[changePos.x][changePos.y].type = newCAT; 
+					Push(newCatS, gameMap[changePos.x][changePos.y].pos);
+				}*/
+			}
+		}
 	}
+	/*//检测移走的猫的原位置四周是否有猫
+	while(!StackEmpty(catS)){
+		Pop(catS, tmpPos);
+		for(int k = 0; k < 4; k++){
+			//若移走的猫的原位置四周有猫
+			if(checkPosDirec(tmpPos, k)){
+				if(gameMap[tmpPos.x + (k - 1) % 2][tmpPos.y + (k - 2) % 2].type == CAT){
+					//记录可移动猫  
+					Push(catS, gameMap[tmpPos.x + (k - 1) % 2][tmpPos.y + (k - 2) % 2].pos);
+					//将猫移动到移走的猫的原位置 
+					putItem(tmpPos.x + (k - 1) % 2, tmpPos.y + (k - 2) % 2, EMPTY);
+					putItem(tmpPos.x, tmpPos.y, CAT);
+					//标注被移动到的位置 
+					gameMap[tmpPos.x][tmpPos.y].type = newCAT; 
+					Push(newCatS, gameMap[tmpPos.x][tmpPos.y].pos);
+					//在暂存栈中删除该猫 
+					delCat(tmpCatS, gameMap[tmpPos.x + (k - 1) % 2][tmpPos.y + (k - 2) % 2].pos);
+				}
+			}
+		}
+	}
+	//将暂存猫变成墓 
+	while(!StackEmpty(tmpCatS)){
+		Pop(tmpCatS, tmpPos);
+		graveFlag = 1;
+		for(int k = 0; k < 4; k++){
+			if(checkPosDirec(tmpPos, k)){
+				if(gameMap[tmpPos.x + (k - 1) % 2][tmpPos.y + (k - 2) % 2].type == newCAT){ 
+					graveFlag = 0;
+				}
+			}
+		}
+		//若暂存猫四周没有新移动到的猫
+		if(graveFlag == 1){
+			//将猫变成墓
+			putItem(tmpPos.x, tmpPos.y, GRAVE);
+		}
+	} 
+	//将标注的新猫标志变回猫
+	while(!StackEmpty(newCatS)){
+		Pop(newCatS, tmpPos);
+		gameMap[tmpPos.x][tmpPos.y].type = CAT;
+	} */
+}
+
+void delCat(SqStack S, Position pos){
+	SqStack tmpS;
+	Position tmpPos;
+	while(!StackEmpty(S)){
+		Pop(S, tmpPos);
+		if(tmpPos.x == pos.x && tmpPos.y == pos.y) continue;
+		Push(tmpS, tmpPos);
+	}
+	while(!StackEmpty(tmpS)){
+		Pop(tmpS, tmpPos);
+		Push(S, tmpPos);
+	}
+}
+
+void uniteSame(){
+	
 }
 
 void putItem(int x, int y, Type type){
@@ -586,43 +696,6 @@ void putItem(int x, int y, Type type){
 	}
 }
 
-void toCat(){
-	int i, j;
-	Position catPos;
-	int graveFlag, tmpFlag;
-	//检测周围是否有猫
-	for(i = 0; i < 4; i++){
-		//若有猫则判断是否被全包围 
-		if(checkPosDirec(clickItem.pos, i)){
-			if(gameMap[clickItem.pos.x + (i - 1) % 2][clickItem.pos.y + (i - 2) % 2].type == CAT){
-				graveFlag = 1;
-				tmpFlag = 0;
-				catPos.x = clickItem.pos.x + (i - 1) % 2;
-				catPos.y = clickItem.pos.y + (i - 2) % 2;
-				for(j = 0; j < 4; j++){
-					if(checkPosDirec(catPos, j)){
-						if(gameMap[catPos.x + (j - 1) % 2][catPos.y + (j - 2) % 2].type == EMPTY){
-				   			graveFlag = 0;
-						}
-						else if(gameMap[catPos.x + (j - 1) % 2][catPos.y + (j - 2) % 2].type == CAT){
-							tmpFlag = 1;
-						}
-					}
-				}
-				//若全包围则将猫变为墓碑
-				if(graveFlag == 1 && tmpFlag == 0){
-					//改变地图标志 
-					putItem(catPos.x, catPos.y, GRAVE);
-				}
-				//若四周除了猫咪以外，其他方向均包围 ，则加入暂存数组 
-				else if(graveFlag == 1 && tmpFlag == 1){
-					Push(tmpCat, catPos);
-				}
-			}
-		}
-	} 
-}
-
 bool checkPosDirec(Position pos, int direc){
 	if(0 <= pos.x + (direc - 1) % 2 && pos.x + (direc - 1) % 2 < MAP_LENGTH
 	&& 0 <= pos.y + (direc - 2) % 2 && pos.y + (direc - 2) % 2 < MAP_LENGTH){
@@ -643,18 +716,6 @@ void stepDown(){
 	outtextxy(25, 75, _T(itoa(user.step, s, 10)));
 }
 
-void toJoin(){
-	//从clickItem开始在gameMap中寻找相邻的值,放在栈中 
-	//将栈中对应坐标的值都变为空地
-	//标注地图 
-	//将点击的位置坐标升级 
-	if(gameMap[clickItem.pos.x][clickItem.pos.y].type != PALACE_3){
-		gameMap[clickItem.pos.x][clickItem.pos.y].type++;
-		//标注地图 
-	}
-	//...加分 
-}
-
 void toPlate(){
 	//若盘子为空
 	if(plate == EMPTY){
@@ -672,51 +733,4 @@ void toPlate(){
 	}
 }
 
-void catMove(){
-	//遍历gameMap，找到猫，并移动
-	Position catPos[MAX_CAT];
-	int k = 0;
-	for(int i = 0; i < MAP_LENGTH; i++){
-		for(int j = 0; j < MAP_LENGTH; j++){
-			if(gameMap[i][j].type == CAT){
-				catPos[k].x = i;
-				catPos[k].y = j;
-				k++;
-			}
-		}
-	}
-	for(i = 0; i < k; i++){
-		move(catPos[i]);
-	}
-	for(i = 0; i < k; i++){
-		putItem(catPos[i].x, catPos[i].y, EMPTY);
-	}
-}
-
-//猫的转向不予考虑 
-void move(Position catPos){
-	Position changePos;
-	int direction = rand() % 4;
-	int posFlag = 0;
-	int i;
-	for(i = 0; i < 4; i++){
-		if(checkPosDirec(catPos, direction)){
-			if(gameMap[catPos.x + (direction - 1) % 2][catPos.y + (direction - 2) % 2].type == EMPTY){
-				 posFlag = 1;
-			}
-		}
-		if(posFlag == 1) break;
-		direction = (direction + 1) % 4;
-	}
-	if(i >= 4){//若四个方向均不能移动 
-		//改变地图标志 
-		putItem(catPos.x, catPos.y, GRAVE);
-	}
-	else{
-		changePos.x = catPos.x + (direction - 1) % 2;
-		changePos.y = catPos.y + (direction - 2) % 2;
-		//改变地图标志 
-		putItem(changePos.x, changePos.y, CAT);
-	}
-}
 
