@@ -45,6 +45,8 @@ typedef struct{//玩家结构体
 	int step;
 	int money;
 }User;
+typedef Position ElemType;
+#include "SqStack.h"
 
 IMAGE scoreBlack;
 IMAGE welcomeSur, gameSur;
@@ -71,6 +73,7 @@ Item clickItem;
 int plate;
 int probArray[100];
 char s[MAX_CAT];
+SqStack tmpCat;
 
 MOUSEMSG m;
 
@@ -82,7 +85,7 @@ void nextItem();
 void showClick();
 void join();
 void catMove();
-void putItem();
+void putItem(int x, int y, Type type);
 void toJoin();
 void toCat();
 void toPlate();
@@ -163,16 +166,19 @@ void gameSurface(){
 			}
 			//点击返回键
 			else if(16 <= m.x && m.x <= 240 && 117 <= m.y && m.y <= 149){
-				welcomeSurface();//返回欢迎界面 
+				//返回欢迎界面 
+				welcomeSurface();
 			}
 			//点击地图位置 
 			else if(12 <= m.x && m.x <= 384 && 184 <= m.y && m.y <= 530){
 				clickItem.pos.x = m.x;
 				clickItem.pos.y = m.y; 
-				showClick();//根据点击位置生成clickItem,并在地图中标注 
-				join();//根据点击的位置进行操作 
+				//根据点击位置生成clickItem,并在地图中标注 
+				showClick();
+				//根据点击的位置进行操作
+				join(); 
 			}
-			//...点击其他位置
+			//点击其他位置
 			else{
 				//无反应 
 			}
@@ -204,8 +210,8 @@ void map(){
 	//初始化盘子 
 	gameMap[0][0].type = PLATE;
 	plate = EMPTY;
-	putimage(0, gameMap[0][0].pos.y, &plate_pic);
-	//随机放置石头
+	putItem(0, 0, PLATE);
+	/*///随机放置石头
 	srand(time(NULL));
 	for(i = 0; i < INIT_STONE; i++){
 		//生成随机位置
@@ -214,11 +220,8 @@ void map(){
 			randomPos.y = rand() % MAP_LENGTH;
 			if(gameMap[randomPos.x][randomPos.y].type == EMPTY) break;
 		}
-		gameMap[randomPos.x][randomPos.y].type = STONE; 
-		//...在地图上放置石头
-		putimage(gameMap[randomPos.x][randomPos.y].pos.x, gameMap[randomPos.x][randomPos.y].pos.y, &empty_pic);
-		putimage(gameMap[randomPos.x][randomPos.y].pos.x, gameMap[randomPos.x][randomPos.y].pos.y, &stoneCover_pic, SRCAND);
-		putimage(gameMap[randomPos.x][randomPos.y].pos.x, gameMap[randomPos.x][randomPos.y].pos.y, &stone_pic, SRCPAINT);
+		//在地图上放置石头
+		putItem(randomPos.x, randomPos.y, STONE);
 	}
 	//随机放置猫
 	for(i = 0; i < INIT_CAT; i++){
@@ -228,13 +231,18 @@ void map(){
 			randomPos.y = rand() % MAP_LENGTH;
 			if(gameMap[randomPos.x][randomPos.y].type == EMPTY) break;
 		}
-		gameMap[randomPos.x][randomPos.y].type = CAT; 
-		//...在地图上放置猫 
-		putimage(gameMap[randomPos.x][randomPos.y].pos.x, gameMap[randomPos.x][randomPos.y].pos.y, &empty_pic);
-		putimage(gameMap[randomPos.x][randomPos.y].pos.x, gameMap[randomPos.x][randomPos.y].pos.y, &catCover_pic, SRCAND);
-		putimage(gameMap[randomPos.x][randomPos.y].pos.x, gameMap[randomPos.x][randomPos.y].pos.y, &cat_pic, SRCPAINT);
+		//在地图上放置猫 
+		putItem(randomPos.x, randomPos.y, CAT);
 	}
-	//...随机叶子、灌木 
+	//...随机叶子、灌木 */
+	//for test
+	putItem(5, 0, STONE);
+	putItem(4, 1, STONE);
+	putItem(4, 2, STONE);
+	putItem(5, 1, CAT);
+	putItem(5, 2, CAT);
+	putItem(5, 3, CAT);
+	//end test
 	//设置初始化数据 
 	user.score = 0;
 	user.step = INIT_STEP;
@@ -250,7 +258,7 @@ void map(){
 }
 
 void nextItem(){
-	item.type = probArray[rand() % 100];//生成随机物品，并记录进item 
+	/*item.type = probArray[rand() % 100];//生成随机物品，并记录进item 
 	//在地图上显示 
 	putimage(174, 35, &newItem_pic);
 	switch(item.type){
@@ -290,7 +298,13 @@ void nextItem(){
 			break;
 		}
 		default:;//item类型错误 
-	}
+	}*/
+	//for test
+	item.type = LEAF;
+	putimage(174, 35, &newItem_pic);
+	putimage(174, 35, &leafCover_pic, SRCAND);
+	putimage(174, 35, &leaf_pic, SRCPAINT);
+	//end test
 }
 
 void probability(){
@@ -318,8 +332,7 @@ void join(){
 	if(LEAF <= item.type && item.type <= PALACE_3){
 		//若放置位置为空 
 		if(clickItem.type == EMPTY){
-			//...判断是否可合体&&判断是否困住猫
-			putItem();//放下物品 
+			putItem(clickItem.pos.x, clickItem.pos.y, item.type);//放下物品 
 			toCat();//...将猫变为墓碑
 			toJoin();//...合体 
 			stepDown();//步数减1 
@@ -328,7 +341,7 @@ void join(){
 		}
 		//若放置位置为盘子
 		else if(clickItem.type == PLATE){
-			toPlate();//...判断盘子信息 
+			toPlate();//判断盘子信息 
 		}
 		//若放置位置为其他物品 
 		else if(CAT <= clickItem.type && clickItem.type <= PALACE_3){
@@ -389,7 +402,6 @@ void join(){
 	else if(item.type == RAINBOW){
 		//若放置位置为空 
 		if(clickItem.type == EMPTY){
-			//...判断是否可合体&&判断是否困住猫 
 			toCat();//...将猫变为墓碑 
 			toJoin();//...合体 （彩虹能合体） 
 			user.step--;//步数减1 
@@ -413,45 +425,161 @@ void join(){
 	}
 }
 
-void putItem(){
-	//放下物品，改变gameMap
-	gameMap[clickItem.pos.x][clickItem.pos.y].type = item.type;
-	//改变地图（？） 
-	putimage(gameMap[clickItem.pos.x][clickItem.pos.y].pos.x, gameMap[clickItem.pos.x][clickItem.pos.y].pos.y, &empty_pic);
-	switch(gameMap[clickItem.pos.x][clickItem.pos.y].type){
+void putItem(int x, int y, Type type){
+	if(!(x == 0 && y == 0) && x < 6 && y < 6){
+		gameMap[x][y].type = type;
+		putimage(gameMap[x][y].pos.x, gameMap[x][y].pos.y, &empty_pic);
+	}
+	switch(type){
+		case EMPTY:{
+			putimage(gameMap[x][y].pos.x, gameMap[x][y].pos.y, &nempty_pic);
+			break;
+		}
+		case PLATE:{
+			putimage(0, gameMap[0][0].pos.y, &plate_pic);
+			break;
+		}
 		case LEAF:{
-			putimage(gameMap[clickItem.pos.x][clickItem.pos.y].pos.x, gameMap[clickItem.pos.x][clickItem.pos.y].pos.y, &leafCover_pic, SRCAND);
-			putimage(gameMap[clickItem.pos.x][clickItem.pos.y].pos.x, gameMap[clickItem.pos.x][clickItem.pos.y].pos.y, &leaf_pic, SRCPAINT);
+			if(x < 6 && y < 6){
+				putimage(gameMap[x][y].pos.x, gameMap[x][y].pos.y, &leafCover_pic, SRCAND);
+				putimage(gameMap[x][y].pos.x, gameMap[x][y].pos.y, &leaf_pic, SRCPAINT);
+			}
+			else{
+				putimage(x, y, &leafCover_pic, SRCAND);
+				putimage(x, y, &leaf_pic, SRCPAINT);
+			}
 			break;
 		}
 		case BUSH:{
-			putimage(gameMap[clickItem.pos.x][clickItem.pos.y].pos.x, gameMap[clickItem.pos.x][clickItem.pos.y].pos.y, &bushCover_pic, SRCAND);
-			putimage(gameMap[clickItem.pos.x][clickItem.pos.y].pos.x, gameMap[clickItem.pos.x][clickItem.pos.y].pos.y, &bush_pic, SRCPAINT);
+			if(x < 6 && y < 6){
+				putimage(gameMap[x][y].pos.x, gameMap[x][y].pos.y, &bushCover_pic, SRCAND);
+				putimage(gameMap[x][y].pos.x, gameMap[x][y].pos.y, &bush_pic, SRCPAINT);
+			}
+			else{
+				putimage(x, y, &bushCover_pic, SRCAND);
+				putimage(x, y, &bush_pic, SRCPAINT);
+			}
 			break;
 		}
 		case TREE:{
-			putimage(gameMap[clickItem.pos.x][clickItem.pos.y].pos.x, gameMap[clickItem.pos.x][clickItem.pos.y].pos.y, &treeCover_pic, SRCAND);
-			putimage(gameMap[clickItem.pos.x][clickItem.pos.y].pos.x, gameMap[clickItem.pos.x][clickItem.pos.y].pos.y, &tree_pic, SRCPAINT);
+			if(x < 6 && y < 6){
+				putimage(gameMap[x][y].pos.x, gameMap[x][y].pos.y, &treeCover_pic, SRCAND);
+				putimage(gameMap[x][y].pos.x, gameMap[x][y].pos.y, &tree_pic, SRCPAINT);
+			}
+			else{
+				putimage(x, y, &treeCover_pic, SRCAND);
+				putimage(x, y, &tree_pic, SRCPAINT);
+			}
 			break;
 		}
 		case HOUSE:{
-			putimage(gameMap[clickItem.pos.x][clickItem.pos.y].pos.x, gameMap[clickItem.pos.x][clickItem.pos.y].pos.y, &houseCover_pic, SRCAND);
-			putimage(gameMap[clickItem.pos.x][clickItem.pos.y].pos.x, gameMap[clickItem.pos.x][clickItem.pos.y].pos.y, &house_pic, SRCPAINT);
+			if(x < 6 && y < 6){
+				putimage(gameMap[x][y].pos.x, gameMap[x][y].pos.y, &houseCover_pic, SRCAND);
+				putimage(gameMap[x][y].pos.x, gameMap[x][y].pos.y, &house_pic, SRCPAINT);
+			}
+			else{
+				putimage(x, y, &houseCover_pic, SRCAND);
+				putimage(x, y, &house_pic, SRCPAINT);
+			}
+			break;
+		}
+		case CAMP:{
+			if(x < 6 && y < 6){
+				putimage(gameMap[x][y].pos.x, gameMap[x][y].pos.y, &campCover_pic, SRCAND);
+				putimage(gameMap[x][y].pos.x, gameMap[x][y].pos.y, &camp_pic, SRCPAINT);
+			}
+			else{
+				putimage(x, y, &campCover_pic, SRCAND);
+				putimage(x, y, &camp_pic, SRCPAINT);
+			}
+			break;
+		}
+		case PALACE_1:{
+			if(x < 6 && y < 6){
+				putimage(gameMap[x][y].pos.x, gameMap[x][y].pos.y, &palace_1Cover_pic, SRCAND);
+				putimage(gameMap[x][y].pos.x, gameMap[x][y].pos.y, &palace_1_pic, SRCPAINT);
+			}
+			else{
+				putimage(x, y, &palace_1Cover_pic, SRCAND);
+				putimage(x, y, &palace_1_pic, SRCPAINT);
+			}
+			break;
+		}
+		case PALACE_2:{
+			if(x < 6 && y < 6){
+				putimage(gameMap[x][y].pos.x, gameMap[x][y].pos.y, &palace_2Cover_pic, SRCAND);
+				putimage(gameMap[x][y].pos.x, gameMap[x][y].pos.y, &palace_2_pic, SRCPAINT);
+			}
+			else{
+				putimage(x, y, &palace_2Cover_pic, SRCAND);
+				putimage(x, y, &palace_2_pic, SRCPAINT);
+			}
+			break;
+		}
+		case PALACE_3:{
+			if(x < 6 && y < 6){
+				putimage(gameMap[x][y].pos.x, gameMap[x][y].pos.y, &palace_3Cover_pic, SRCAND);
+				putimage(gameMap[x][y].pos.x, gameMap[x][y].pos.y, &palace_3_pic, SRCPAINT);
+			}
+			else{
+				putimage(x, y, &palace_3Cover_pic, SRCAND);
+				putimage(x, y, &palace_3_pic, SRCPAINT);
+			}
 			break;
 		}
 		case CAT:{
-			putimage(gameMap[clickItem.pos.x][clickItem.pos.y].pos.x, gameMap[clickItem.pos.x][clickItem.pos.y].pos.y, &catCover_pic, SRCAND);
-			putimage(gameMap[clickItem.pos.x][clickItem.pos.y].pos.x, gameMap[clickItem.pos.x][clickItem.pos.y].pos.y, &cat_pic, SRCPAINT);
+			if(x < 6 && y < 6){
+				putimage(gameMap[x][y].pos.x, gameMap[x][y].pos.y, &catCover_pic, SRCAND);
+				putimage(gameMap[x][y].pos.x, gameMap[x][y].pos.y, &cat_pic, SRCPAINT);
+			}
+			else{
+				putimage(x, y, &catCover_pic, SRCAND);
+				putimage(x, y, &cat_pic, SRCPAINT);
+			}
 			break;
 		}
 		case BOMB:{
-			putimage(gameMap[clickItem.pos.x][clickItem.pos.y].pos.x, gameMap[clickItem.pos.x][clickItem.pos.y].pos.y, &bombCover_pic, SRCAND);
-			putimage(gameMap[clickItem.pos.x][clickItem.pos.y].pos.x, gameMap[clickItem.pos.x][clickItem.pos.y].pos.y, &bomb_pic, SRCPAINT);
+			if(x < 6 && y < 6){
+				putimage(gameMap[x][y].pos.x, gameMap[x][y].pos.y, &bombCover_pic, SRCAND);
+				putimage(gameMap[x][y].pos.x, gameMap[x][y].pos.y, &bomb_pic, SRCPAINT);
+			}
+			else{
+				putimage(x, y, &bombCover_pic, SRCAND);
+				putimage(x, y, &bomb_pic, SRCPAINT);
+			}
 			break;
 		}
 		case RAINBOW:{
-			putimage(gameMap[clickItem.pos.x][clickItem.pos.y].pos.x, gameMap[clickItem.pos.x][clickItem.pos.y].pos.y, &rainbowCover_pic, SRCAND);
-			putimage(gameMap[clickItem.pos.x][clickItem.pos.y].pos.x, gameMap[clickItem.pos.x][clickItem.pos.y].pos.y, &rainbow_pic, SRCPAINT);
+			if(x < 6 && y < 6){
+				putimage(gameMap[x][y].pos.x, gameMap[x][y].pos.y, &rainbowCover_pic, SRCAND);
+				putimage(gameMap[x][y].pos.x, gameMap[x][y].pos.y, &rainbow_pic, SRCPAINT);
+			}
+			else{
+				putimage(x, y, &rainbowCover_pic, SRCAND);
+				putimage(x, y, &rainbow_pic, SRCPAINT);
+			}
+			break;
+		}
+		case STONE:{
+			if(x < 6 && y < 6){
+				putimage(gameMap[x][y].pos.x, gameMap[x][y].pos.y, &stoneCover_pic, SRCAND);
+				putimage(gameMap[x][y].pos.x, gameMap[x][y].pos.y, &stone_pic, SRCPAINT);
+			}
+			else{
+				putimage(x, y, &stoneCover_pic, SRCAND);
+				putimage(x, y, &stone_pic, SRCPAINT);
+			}
+			break;
+		}
+		case GRAVE:{
+			if(x < 6 && y < 6){
+				putimage(gameMap[x][y].pos.x, gameMap[x][y].pos.y, &graveCover_pic, SRCAND);
+				putimage(gameMap[x][y].pos.x, gameMap[x][y].pos.y, &grave_pic, SRCPAINT);
+			}
+			else{
+				putimage(x, y, &graveCover_pic, SRCAND);
+				putimage(x, y, &grave_pic, SRCPAINT);
+			}
 			break;
 		}
 		default:;//item类型错误 
@@ -461,30 +589,34 @@ void putItem(){
 void toCat(){
 	int i, j;
 	Position catPos;
-	int graveFlag;
+	int graveFlag, tmpFlag;
 	//检测周围是否有猫
 	for(i = 0; i < 4; i++){
 		//若有猫则判断是否被全包围 
 		if(checkPosDirec(clickItem.pos, i)){
 			if(gameMap[clickItem.pos.x + (i - 1) % 2][clickItem.pos.y + (i - 2) % 2].type == CAT){
 				graveFlag = 1;
+				tmpFlag = 0;
 				catPos.x = clickItem.pos.x + (i - 1) % 2;
 				catPos.y = clickItem.pos.y + (i - 2) % 2;
 				for(j = 0; j < 4; j++){
 					if(checkPosDirec(catPos, j)){
-						if(gameMap[catPos.x + (j - 1) % 2][catPos.y + (j - 2) % 2].type == EMPTY
-						|| gameMap[catPos.x + (j - 1) % 2][catPos.y + (j - 2) % 2].type == CAT){
+						if(gameMap[catPos.x + (j - 1) % 2][catPos.y + (j - 2) % 2].type == EMPTY){
 				   			graveFlag = 0;
+						}
+						else if(gameMap[catPos.x + (j - 1) % 2][catPos.y + (j - 2) % 2].type == CAT){
+							tmpFlag = 1;
 						}
 					}
 				}
 				//若全包围则将猫变为墓碑
-				if(graveFlag == 1){
-					gameMap[catPos.x][catPos.y].type = GRAVE;
+				if(graveFlag == 1 && tmpFlag == 0){
 					//改变地图标志 
-					putimage(gameMap[catPos.x][catPos.y].pos.x, gameMap[catPos.x][catPos.y].pos.y, &empty_pic);
-					putimage(gameMap[catPos.x][catPos.y].pos.x, gameMap[catPos.x][catPos.y].pos.y, &graveCover_pic, SRCAND);
-					putimage(gameMap[catPos.x][catPos.y].pos.x, gameMap[catPos.x][catPos.y].pos.y, &grave_pic, SRCPAINT);
+					putItem(catPos.x, catPos.y, GRAVE);
+				}
+				//若四周除了猫咪以外，其他方向均包围 ，则加入暂存数组 
+				else if(graveFlag == 1 && tmpFlag == 1){
+					Push(tmpCat, catPos);
 				}
 			}
 		}
@@ -524,11 +656,19 @@ void toJoin(){
 }
 
 void toPlate(){
-	//若盘子为空，则将物品放入，生成下一物品 
+	//若盘子为空
 	if(plate == EMPTY){
 		plate = item.type;
-		//...在盘子中显示物品 
+		putItem(0, 0, plate);
 		nextItem();
+	}
+	//若盘子不为空 
+	else{
+		item.type = plate;
+		putimage(174, 35, &newItem_pic);
+		putItem(174, 35, plate);
+		putItem(0, 0, PLATE);
+		plate = EMPTY;
 	}
 }
 
@@ -549,10 +689,7 @@ void catMove(){
 		move(catPos[i]);
 	}
 	for(i = 0; i < k; i++){
-		//改变坐标 
-		gameMap[catPos[i].x][catPos[i].y].type = EMPTY;
-		//更改地图标志
-		putimage(gameMap[catPos[i].x][catPos[i].y].pos.x, gameMap[catPos[i].x][catPos[i].y].pos.y, &nempty_pic);
+		putItem(catPos[i].x, catPos[i].y, EMPTY);
 	}
 }
 
@@ -572,21 +709,14 @@ void move(Position catPos){
 		direction = (direction + 1) % 4;
 	}
 	if(i >= 4){//若四个方向均不能移动 
-		gameMap[catPos.x][catPos.y].type = GRAVE;
 		//改变地图标志 
-		putimage(gameMap[catPos.x][catPos.y].pos.x, gameMap[catPos.x][catPos.y].pos.y, &empty_pic);
-		putimage(gameMap[catPos.x][catPos.y].pos.x, gameMap[catPos.x][catPos.y].pos.y, &graveCover_pic, SRCAND);
-		putimage(gameMap[catPos.x][catPos.y].pos.x, gameMap[catPos.x][catPos.y].pos.y, &grave_pic, SRCPAINT);
+		putItem(catPos.x, catPos.y, GRAVE);
 	}
 	else{
 		changePos.x = catPos.x + (direction - 1) % 2;
 		changePos.y = catPos.y + (direction - 2) % 2;
-		//改变坐标 
-		gameMap[changePos.x][changePos.y].type = CAT;
-		//更改地图标志
-		putimage(gameMap[changePos.x][changePos.y].pos.x, gameMap[changePos.x][changePos.y].pos.y, &empty_pic);
-		putimage(gameMap[changePos.x][changePos.y].pos.x, gameMap[changePos.x][changePos.y].pos.y, &catCover_pic, SRCAND);
-		putimage(gameMap[changePos.x][changePos.y].pos.x, gameMap[changePos.x][changePos.y].pos.y, &cat_pic, SRCPAINT);
+		//改变地图标志 
+		putItem(changePos.x, changePos.y, CAT);
 	}
 }
 

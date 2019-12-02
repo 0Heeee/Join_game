@@ -6,16 +6,17 @@
 --------------------Configuration: Join - Win32 Debug--------------------
 </h3>
 <h3>Command Lines</h3>
-Creating temporary file "C:\Users\cjq2061\AppData\Local\Temp\RSP2404.tmp" with contents
+Creating temporary file "C:\Users\cjq2061\AppData\Local\Temp\RSP8739.tmp" with contents
 [
 /nologo /MLd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /Fp"Debug/Join.pch" /YX /Fo"Debug/" /Fd"Debug/" /FD /GZ /c 
-"E:\C\join\Join.cpp"
+"E:\C\Join_game\Join.cpp"
 ]
-Creating command line "cl.exe @C:\Users\cjq2061\AppData\Local\Temp\RSP2404.tmp" 
+Creating command line "cl.exe @C:\Users\cjq2061\AppData\Local\Temp\RSP8739.tmp" 
 <h3>Output Window</h3>
 Compiling...
-Skipping... (no relevant changes detected)
 Join.cpp
+E:\C\Join_game\Join.cpp(105) : warning C4508: 'main' : function should return a value; 'void' return type assumed
+E:\C\Join_game\Join.cpp(190) : warning C4101: 'randomPos' : unreferenced local variable
 
 
 
