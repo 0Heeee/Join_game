@@ -1,76 +1,91 @@
-//#ifndef _SqStack_
-//#define _SqStack_
-#include "StatusNum.h"
-#define MAXSIZE 100
+ #include "StatusNum.h"
+ // c3-1.h 栈的顺序存储表示
+ #define STACK_INIT_SIZE 10 // 存储空间初始分配量
+ #define STACKINCREMENT 2 // 存储空间分配增量
+ struct SqStack
+ {
+   SElemType *base; // 在栈构造之前和销毁之后，base的值为NULL
+   SElemType *top; // 栈顶指针
+   int stacksize; // 当前已分配的存储空间，以元素为单位
+ }; // 顺序栈
+  // bo3-1.cpp 顺序栈（存储结构由c3-1.h定义）的基本操作（9个）
+ Status InitStack(SqStack &S)
+ { // 构造一个空栈S
+   if(!(S.base=(SElemType *)malloc(STACK_INIT_SIZE*sizeof(SElemType))))
+     exit(OVERFLOW); // 存储分配失败
+   S.top=S.base;
+   S.stacksize=STACK_INIT_SIZE;
+   return OK;
+ }
 
-//顺序栈结构
-typedef struct{
-	ElemType *base;
-	ElemType *top;
-	int size;
-}SqStack; 
+ Status DestroyStack(SqStack &S)
+ { // 销毁栈S，S不再存在
+   free(S.base);
+   S.base=NULL;
+   S.top=NULL;
+   S.stacksize=0;
+   return OK;
+ }
 
-//栈的初始化,初始长度为m。
-Status InitStack(SqStack &S, int m){
-	S.base = (ElemType*)malloc(m * sizeof(ElemType));
-	if(!S.base) exit(OVERFLOW);
-	S.top = S.base;
-	S.size = m;
-	return OK;
-}
+ Status ClearStack(SqStack &S)
+ { // 把S置为空栈
+   S.top=S.base;
+   return OK;
+ }
 
-//栈结构销毁。
-Status DestroyStack(SqStack &S){
-	free(S.base);
-	S.base = S.top = NULL;
-	S.size = 0;
-	return OK;
-}
+ Status StackEmpty(SqStack S)
+ { // 若栈S为空栈，则返回TRUE，否则返回FALSE
+   if(S.top==S.base)
+     return TRUE;
+   else
+     return FALSE;
+ }
 
-//清空栈。
-Status ClearStack(SqStack &S){
-	S.top = S.base;
-	return OK;
-}
+ int StackLength(SqStack S)
+ { // 返回S的元素个数，即栈的长度
+   return S.top-S.base;
+ }
 
-//辨别栈是否为空。
-Status StackEmpty(SqStack S){
-	if(S.top == S.base) return TRUE;
-	return FALSE;
-}
+ Status GetTop(SqStack S,SElemType &e)
+ { // 若栈不空，则用e返回S的栈顶元素，并返回OK；否则返回ERROR
+   if(S.top>S.base)
+   {
+     e=*(S.top-1);
+     return OK;
+   }
+   else
+     return ERROR;
+ }
 
-//求栈的大小。
-int StackLength(SqStack S){
-	return S.top - S.base;
-}
+ Status Push(SqStack &S,SElemType e)
+ { // 插入元素e为新的栈顶元素
+   if(S.top-S.base>=S.stacksize) // 栈满，追加存储空间
+   {
+     S.base=(SElemType *)realloc(S.base,(S.stacksize+STACKINCREMENT)*sizeof(SElemType));
+     if(!S.base)
+       exit(OVERFLOW); // 存储分配失败
+     S.top=S.base+S.stacksize;
+     S.stacksize+=STACKINCREMENT;
+   }
+   *(S.top)++=e;
+   return OK;
+ }
 
-//入栈，插入e到栈顶。
-Status Push(SqStack &S, ElemType e){
-	if(S.top - S.base >= S.size) return ERROR;
-	*(S.top)++ = e;
-	return OK;
-}
+ Status Pop(SqStack &S,SElemType &e)
+ { // 若栈不空，则删除S的栈顶元素，用e返回其值，并返回OK；否则返回ERROR
+   if(S.top==S.base)
+     return ERROR;
+   e=*--S.top;
+   return OK;
+ }
 
-//出栈，先决条件是栈非空。
-Status Pop(SqStack &S, ElemType &e){
-	if(StackEmpty(S)) return ERROR;
-	e = *--S.top;
-	return OK;
-}
+ Status StackTraverse(SqStack S,Status(*visit)(SElemType))
+ { // 从栈底到栈顶依次对栈中每个元素调用函数visit()。
+   // 一旦visit()失败，则操作失败
+   while(S.top>S.base)
+     visit(*S.base++);
+   printf("\n");
+   return OK;
+ }
+ 
 
-//判断栈是否满。
-Status IsFull(SqStack S){
-	if(S.top - S.base == S.size) return TRUE;
-	return FALSE;
-}
-
-//遍历栈。
-Status StackTraverse(SqStack S, Status(*visit)(ElemType)){
-	ElemType* p;
-	for(p = S.base; p != S.top; p++){
-		visit(*p);
-	}
-	return OK;
-}
-
-//#endif
